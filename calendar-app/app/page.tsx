@@ -241,6 +241,24 @@ export default function CalendarApp() {
                     setIsNewEvent(false);
                     setIsEventModalOpen(true);
                   }}
+                  onNewEvent={(date) => {
+                    setSelectedEvent({
+                      id: '',
+                      title: '',
+                      description: '',
+                      location: '',
+                      start: date,
+                      end: new Date(date.getTime() + 60 * 60 * 1000),
+                      category: categories[0]?.id || '',
+                      status: 'pending',
+                      reminderTime: 10,
+                      participants: [],
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    });
+                    setIsNewEvent(true);
+                    setIsEventModalOpen(true);
+                  }}
                   categories={categories}
                 />
               ) : (
@@ -251,6 +269,24 @@ export default function CalendarApp() {
                   onEventClick={(event) => {
                     setSelectedEvent(event);
                     setIsNewEvent(false);
+                    setIsEventModalOpen(true);
+                  }}
+                  onNewEvent={(date) => {
+                    setSelectedEvent({
+                      id: '',
+                      title: '',
+                      description: '',
+                      location: '',
+                      start: date,
+                      end: new Date(date.getTime() + 60 * 60 * 1000),
+                      category: categories[0]?.id || '',
+                      status: 'pending',
+                      reminderTime: 10,
+                      participants: [],
+                      createdAt: new Date(),
+                      updatedAt: new Date(),
+                    });
+                    setIsNewEvent(true);
                     setIsEventModalOpen(true);
                   }}
                   categories={categories}

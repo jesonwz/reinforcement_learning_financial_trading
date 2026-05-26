@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Plus } from 'lucide-react';
 import { useState } from 'react';
 import Tooltip from './Tooltip';
 import type { CalendarEvent, CalendarCategory } from '../types';
@@ -8,12 +8,14 @@ interface MonthViewProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
+  onNewEvent: (date: Date) => void;
   categories: CalendarCategory[];
 }
 
-export default function MonthView({ events, currentDate, onDateChange, onEventClick, categories }: MonthViewProps) {
+export default function MonthView({ events, currentDate, onDateChange, onEventClick, onNewEvent, categories }: MonthViewProps) {
   const [hoveredDate, setHoveredDate] = useState<Date | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; date: Date } | null>(null);
   
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
@@ -117,7 +119,7 @@ export default function MonthView({ events, currentDate, onDateChange, onEventCl
             return (
               <div
                 key={date}
-                className={`relative aspect-square rounded-xl p-2 cursor-pointer transition-all duration-200 ${
+                className={`relative rounded-xl p-2 cursor-pointer transition-all duration-200 flex flex-col ${
                   isToday 
                     ? 'bg-blue-500/30 ring-1 ring-blue-500' 
                     : isSelected 
@@ -127,24 +129,36 @@ export default function MonthView({ events, currentDate, onDateChange, onEventCl
                 onClick={() => handleDateClick(date)}
                 onMouseEnter={() => setHoveredDate(new Date(year, month, date))}
                 onMouseLeave={() => setHoveredDate(null)}
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  const eventDate = new Date(year, month, date);
+                  eventDate.setHours(9, 0, 0, 0);
+                  setContextMenu({ x: e.clientX, y: e.clientY, date: eventDate });
+                }}
+                style={{ minHeight: '80px' }}
               >
-                <div className={`text-sm font-medium ${
+                <div className={`text-sm font-medium flex-shrink-0 ${
                   isToday ? 'text-blue-400' : isSelected ? 'text-white' : 'text-white/70'
                 }`}>
                   {date}
                 </div>
                 
                 {hasEvents && (
-                  <div className="flex flex-wrap gap-0.5 mt-1">
+                  <div className="flex flex-col gap-0.5 mt-1.5 flex-1 overflow-hidden">
                     {dayEvents.slice(0, 3).map((event) => (
                       <div
                         key={event.id}
-                        className="w-2 h-2 rounded-full"
-                        style={{ backgroundColor: getCategoryColor(event.category) }}
-                      />
+                        className="text-xs px-1.5 py-0.5 rounded truncate"
+                        style={{ 
+                          backgroundColor: `${getCategoryColor(event.category)}40`,
+                          color: event.status === 'completed' ? '#9ca3af' : '#f9fafb'
+                        }}
+                      >
+                        {event.title}
+                      </div>
                     ))}
                     {dayEvents.length > 3 && (
-                      <span className="text-xs text-white/50">+{dayEvents.length - 3}</span>
+                      <span className="text-xs text-white/50 px-1.5">+{dayEvents.length - 3} 更多</span>
                     )}
                   </div>
                 )}
@@ -187,6 +201,33 @@ export default function MonthView({ events, currentDate, onDateChange, onEventCl
           </div>
         )}
       </div>
+
+      {contextMenu && (
+        <>
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={() => setContextMenu(null)}
+          />
+          <div
+            className="fixed z-50 glass-effect-strong rounded-xl py-2 min-w-[160px] animate-scale-in"
+            style={{
+              left: Math.min(contextMenu.x, window.innerWidth - 180),
+              top: Math.min(contextMenu.y, window.innerHeight - 100),
+            }}
+          >
+            <button
+              onClick={() => {
+                onNewEvent(contextMenu.date);
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              创建日程
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

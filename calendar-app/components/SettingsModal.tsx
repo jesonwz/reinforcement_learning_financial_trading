@@ -83,7 +83,7 @@ export default function SettingsModal({ isOpen, onClose, settings, onSaveSetting
           {/* 背景图片 */}
           <section>
             <h3 className="text-lg font-medium text-white mb-4 flex items-center gap-2">
-              <Image className="w-5 h-5" />
+              <Image className="w-5 h-5" aria-hidden="true" />
               背景图片
             </h3>
             <div className="grid grid-cols-3 gap-3">

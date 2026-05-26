@@ -1,4 +1,4 @@
-import { Clock, Users, MapPin, ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
+import { Clock, Users, MapPin, ChevronLeft, ChevronRight, CalendarDays, Plus } from 'lucide-react';
 import { useState } from 'react';
 import Tooltip from './Tooltip';
 import type { CalendarEvent, CalendarCategory } from '../types';
@@ -9,11 +9,13 @@ interface WeekViewProps {
   currentDate: Date;
   onDateChange: (date: Date) => void;
   onEventClick: (event: CalendarEvent) => void;
+  onNewEvent: (date: Date) => void;
   categories: CalendarCategory[];
 }
 
-export default function WeekView({ events, currentDate, onDateChange, onEventClick, categories }: WeekViewProps) {
+export default function WeekView({ events, currentDate, onDateChange, onEventClick, onNewEvent, categories }: WeekViewProps) {
   const [hoveredEvent, setHoveredEvent] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; date: Date } | null>(null);
   
   const startOfWeek = new Date(currentDate);
   startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
@@ -51,9 +53,10 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
     const top = (hourOffset + minuteOffset) * 80;
     
     const eventDuration = (event.end.getTime() - event.start.getTime()) / (1000 * 60 * 60);
-    const height = Math.max(eventDuration * 80 - 4, 40);
+    const maxHeight = (17 - 8) * 80 - 4;
+    const height = Math.min(Math.max(eventDuration * 80 - 4, 32), maxHeight);
     
-    return { dayOffset, top, height };
+    return { dayOffset, top, height, isOverflow: eventDuration * 80 - 4 > maxHeight };
   };
 
   const getCategoryColor = (categoryId: string): string => {
@@ -130,6 +133,14 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
             dayDate.setHours(0, 0, 0, 0);
             const isToday = dayDate.getTime() === today.getTime();
             const dayEvents = getEventsForDay(dayOffset);
+
+            const handleContextMenu = (e: React.MouseEvent) => {
+              e.preventDefault();
+              const clickedHour = Math.max(8, Math.min(17, 8 + Math.floor((e.clientY - e.currentTarget.getBoundingClientRect().top) / 80)));
+              const eventDate = new Date(dayDate);
+              eventDate.setHours(clickedHour, 0, 0, 0);
+              setContextMenu({ x: e.clientX, y: e.clientY, date: eventDate });
+            };
             
             return (
               <div
@@ -137,6 +148,7 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
                 className={`relative border-r border-white/10 last:border-r-0 ${
                   isToday ? 'bg-blue-500/10' : 'bg-white/[0.02]'
                 }`}
+                onContextMenu={handleContextMenu}
               >
                 <div className={`p-3 text-center border-b border-white/10 ${
                   isToday ? 'bg-blue-500/20' : ''
@@ -153,7 +165,7 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
 
                 <div className="relative min-h-[640px]">
                   {dayEvents.map((event) => {
-                    const { top, height } = getEventPosition(event);
+                    const { top, height, isOverflow } = getEventPosition(event);
                     const categoryColor = getCategoryColor(event.category);
                     const isCompleted = event.status === 'completed';
                     const isHovered = hoveredEvent === event.id;
@@ -175,32 +187,39 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
                         onMouseEnter={() => setHoveredEvent(event.id)}
                         onMouseLeave={() => setHoveredEvent(null)}
                       >
-                        <div className={`p-2 h-full flex flex-col justify-between ${
+                        <div className={`p-2 h-full flex flex-col ${
                           isCompleted ? 'opacity-70' : ''
-                        }`}>
-                          <div className="flex-1 overflow-hidden">
+                        } ${isOverflow ? 'justify-between' : 'justify-between'}`}>
+                          <div className={`${isOverflow ? 'overflow-hidden' : ''}`}>
                             <div className={`text-sm font-medium leading-tight ${
                               isCompleted ? 'text-white/60 line-through' : 'text-white'
                             }`}>
                               {event.title}
                             </div>
-                            <div className="text-xs text-white/60 mt-1">
-                              <Clock className="w-3 h-3 inline mr-1" />
-                              {new Date(event.start).toLocaleTimeString('zh-CN', { 
-                                hour: '2-digit', 
-                                minute: '2-digit' 
-                              })}
-                            </div>
-                            {event.location && (
-                              <div className="text-xs text-white/50 mt-0.5 truncate">
-                                {event.location}
-                              </div>
+                            {!isOverflow && (
+                              <>
+                                <div className="text-xs text-white/60 mt-1">
+                                  <Clock className="w-3 h-3 inline mr-1" />
+                                  {new Date(event.start).toLocaleTimeString('zh-CN', { 
+                                    hour: '2-digit', 
+                                    minute: '2-digit' 
+                                  })}
+                                </div>
+                                {event.location && (
+                                  <div className="text-xs text-white/50 mt-0.5 truncate">
+                                    {event.location}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                           
                           {!isCompleted && (
-                            <div className="text-xs text-white/70 mt-1">
-                              {calculateTimeUntilEvent(event.start)}
+                            <div className="text-xs text-white/70 mt-1 flex items-center justify-between">
+                              <span>{calculateTimeUntilEvent(event.start)}</span>
+                              {isOverflow && (
+                                <span className="text-white/50">...</span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -213,6 +232,33 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
           })}
         </div>
       </div>
+
+      {contextMenu && (
+        <>
+          <div 
+            className="fixed inset-0 z-40"
+            onClick={() => setContextMenu(null)}
+          />
+          <div
+            className="fixed z-50 glass-effect-strong rounded-xl py-2 min-w-[160px] animate-scale-in"
+            style={{
+              left: Math.min(contextMenu.x, window.innerWidth - 180),
+              top: Math.min(contextMenu.y, window.innerHeight - 100),
+            }}
+          >
+            <button
+              onClick={() => {
+                onNewEvent(contextMenu.date);
+                setContextMenu(null);
+              }}
+              className="w-full px-4 py-2 text-left text-white/80 hover:bg-white/10 transition-colors flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              创建日程
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }

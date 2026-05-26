@@ -126,10 +126,11 @@ export default function Sidebar({ categories, onCategoryToggle, onCategoryAdd, o
                         ? 'bg-white/20 text-white' 
                         : 'text-white/70 hover:bg-white/10'
                   }`}
+                  style={{ minHeight: '40px' }}
                 >
-                  <span className="leading-none">{date}</span>
+                  <span className="leading-none flex-shrink-0">{date}</span>
                   {hasEvent && (
-                    <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
+                    <span className={`w-1.5 h-1.5 rounded-full mt-1 flex-shrink-0 ${
                       isToday ? 'bg-white/80' : 'bg-blue-400'
                     }`} />
                   )}
