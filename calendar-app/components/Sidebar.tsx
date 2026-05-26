@@ -1,4 +1,4 @@
-import { Plus, Calendar, ChevronRight, Check } from 'lucide-react';
+import { Plus, Calendar, ChevronRight, Check, X, Edit2 } from 'lucide-react';
 import { useState } from 'react';
 import GlassCard from './GlassCard';
 import type { CalendarCategory, CalendarEvent } from '../types';
@@ -6,14 +6,53 @@ import type { CalendarCategory, CalendarEvent } from '../types';
 interface SidebarProps {
   categories: CalendarCategory[];
   onCategoryToggle: (id: string) => void;
+  onCategoryAdd: (category: Omit<CalendarCategory, 'id'>) => void;
+  onCategoryDelete: (id: string) => void;
+  onCategoryUpdate: (id: string, updates: Partial<CalendarCategory>) => void;
   onAddEvent: () => void;
   currentDate: Date;
   onDateClick: (date: Date) => void;
   events: CalendarEvent[];
 }
 
-export default function Sidebar({ categories, onCategoryToggle, onAddEvent, currentDate, onDateClick, events }: SidebarProps) {
+export default function Sidebar({ categories, onCategoryToggle, onCategoryAdd, onCategoryDelete, onCategoryUpdate, onAddEvent, currentDate, onDateClick, events }: SidebarProps) {
   const [hoveredCategory, setHoveredCategory] = useState<string | null>(null);
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryColor, setNewCategoryColor] = useState('#3b82f6');
+  const [editingCategoryId, setEditingCategoryId] = useState<string | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState('');
+
+  const colorOptions = [
+    '#3b82f6', '#8b5cf6', '#10b981', '#f59e0b', '#ec4899', '#06b6d4', 
+    '#ef4444', '#84cc16', '#f97316', '#a855f7'
+  ];
+
+  const handleAddCategory = () => {
+    if (newCategoryName.trim()) {
+      onCategoryAdd({
+        name: newCategoryName.trim(),
+        color: newCategoryColor,
+        enabled: true,
+      });
+      setNewCategoryName('');
+      setNewCategoryColor('#3b82f6');
+      setShowAddCategory(false);
+    }
+  };
+
+  const handleStartEdit = (category: CalendarCategory) => {
+    setEditingCategoryId(category.id);
+    setEditingCategoryName(category.name);
+  };
+
+  const handleSaveEdit = (id: string) => {
+    if (editingCategoryName.trim()) {
+      onCategoryUpdate(id, { name: editingCategoryName.trim() });
+    }
+    setEditingCategoryId(null);
+    setEditingCategoryName('');
+  };
 
   const days = ['日', '一', '二', '三', '四', '五', '六'];
   
@@ -80,7 +119,7 @@ export default function Sidebar({ categories, onCategoryToggle, onAddEvent, curr
                 <button
                   key={date}
                   onClick={() => onDateClick(new Date(year, month, date))}
-                  className={`relative aspect-square rounded-lg flex items-center justify-center text-sm transition-all duration-200 ${
+                  className={`relative aspect-square rounded-lg flex flex-col items-center justify-center text-sm transition-all duration-200 ${
                     isToday 
                       ? 'bg-blue-500 text-white' 
                       : isSelected 
@@ -88,9 +127,9 @@ export default function Sidebar({ categories, onCategoryToggle, onAddEvent, curr
                         : 'text-white/70 hover:bg-white/10'
                   }`}
                 >
-                  {date}
+                  <span className="leading-none">{date}</span>
                   {hasEvent && (
-                    <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${
+                    <span className={`w-1.5 h-1.5 rounded-full mt-0.5 ${
                       isToday ? 'bg-white/80' : 'bg-blue-400'
                     }`} />
                   )}
@@ -101,40 +140,146 @@ export default function Sidebar({ categories, onCategoryToggle, onAddEvent, curr
         </GlassCard>
 
         <GlassCard className="animate-fade-in-delay-2">
-          <h3 className="text-white/80 font-medium mb-3">我的日历</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-white/80 font-medium">我的日历</h3>
+            <button
+              onClick={() => setShowAddCategory(!showAddCategory)}
+              className="p-1.5 rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <Plus className="w-4 h-4 text-white/50" />
+            </button>
+          </div>
+          
+          {showAddCategory && (
+            <div className="p-3 rounded-xl bg-white/5 mb-3 space-y-2">
+              <input
+                type="text"
+                value={newCategoryName}
+                onChange={(e) => setNewCategoryName(e.target.value)}
+                placeholder="分类名称"
+                className="w-full px-3 py-2 rounded-lg bg-white/10 text-white text-sm placeholder-white/40 outline-none focus:ring-1 focus:ring-blue-500"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {colorOptions.map((color) => (
+                  <button
+                    key={color}
+                    onClick={() => setNewCategoryColor(color)}
+                    className={`w-6 h-6 rounded-full transition-transform hover:scale-110 ${
+                      newCategoryColor === color ? 'ring-2 ring-white/50' : ''
+                    }`}
+                    style={{ backgroundColor: color }}
+                  />
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowAddCategory(false)}
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-white/10 text-white/70 text-sm hover:bg-white/20 transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleAddCategory}
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-400 transition-colors"
+                >
+                  添加
+                </button>
+              </div>
+            </div>
+          )}
           
           <div className="space-y-1">
             {categories.map((category) => {
               const isHovered = hoveredCategory === category.id;
               const isEnabled = category.enabled;
+              const isEditing = editingCategoryId === category.id;
               
               return (
-                <button
+                <div
                   key={category.id}
-                  onClick={() => onCategoryToggle(category.id)}
-                  onMouseEnter={() => setHoveredCategory(category.id)}
-                  onMouseLeave={() => setHoveredCategory(null)}
-                  className={`w-full flex items-center justify-between p-2.5 rounded-lg transition-all duration-200 ${
-                    isEnabled ? 'hover:bg-white/10' : 'opacity-50 hover:opacity-70'
-                  } ${isHovered && isEnabled ? 'bg-white/10' : ''}`}
+                  className={`w-full rounded-lg transition-all duration-200 ${
+                    isEnabled ? 'hover:bg-white/10' : 'opacity-50'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <div 
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: isEnabled ? category.color : '#9ca3af' }}
-                    />
-                    <span className={`text-sm ${isEnabled ? 'text-white/80' : 'text-white/40'}`}>
-                      {category.name}
-                    </span>
-                  </div>
-                  <div className={`flex items-center ${isEnabled ? '' : 'opacity-30'}`}>
-                    {isEnabled ? (
-                      <Check className="w-4 h-4 text-green-400" />
-                    ) : (
-                      <ChevronRight className="w-4 h-4 text-white/30" />
-                    )}
-                  </div>
-                </button>
+                  {isEditing ? (
+                    <div className="p-2.5 flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: isEnabled ? category.color : '#9ca3af' }}
+                      />
+                      <input
+                        type="text"
+                        value={editingCategoryName}
+                        onChange={(e) => setEditingCategoryName(e.target.value)}
+                        className="flex-1 bg-white/10 text-white text-sm outline-none rounded-lg px-2 py-1"
+                        autoFocus
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') handleSaveEdit(category.id);
+                          if (e.key === 'Escape') setEditingCategoryId(null);
+                        }}
+                      />
+                      <button
+                        onClick={() => handleSaveEdit(category.id)}
+                        className="p-1 rounded hover:bg-white/20 transition-colors"
+                      >
+                        <Check className="w-4 h-4 text-green-400" />
+                      </button>
+                      <button
+                        onClick={() => setEditingCategoryId(null)}
+                        className="p-1 rounded hover:bg-white/20 transition-colors"
+                      >
+                        <X className="w-4 h-4 text-white/50" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => onCategoryToggle(category.id)}
+                      onMouseEnter={() => setHoveredCategory(category.id)}
+                      onMouseLeave={() => setHoveredCategory(null)}
+                      className={`w-full flex items-center justify-between p-2.5 ${
+                        isHovered && isEnabled ? 'bg-white/10' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div 
+                          className="w-3 h-3 rounded-full"
+                          style={{ backgroundColor: isEnabled ? category.color : '#9ca3af' }}
+                        />
+                        <span className={`text-sm ${isEnabled ? 'text-white/80' : 'text-white/40'}`}>
+                          {category.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEdit(category);
+                          }}
+                          className="p-1 rounded hover:bg-white/20 transition-colors"
+                        >
+                          <Edit2 className="w-3.5 h-3.5 text-white/40" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCategoryDelete(category.id);
+                          }}
+                          className="p-1 rounded hover:bg-red-500/20 transition-colors"
+                        >
+                          <X className="w-3.5 h-3.5 text-red-400/70" />
+                        </button>
+                        <div className={`${isEnabled ? '' : 'opacity-30'}`}>
+                          {isEnabled ? (
+                            <Check className="w-4 h-4 text-green-400" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4 text-white/30" />
+                          )}
+                        </div>
+                      </div>
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>

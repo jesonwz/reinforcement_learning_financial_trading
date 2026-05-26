@@ -178,6 +178,24 @@ export default function CalendarApp() {
           <Sidebar
             categories={categories}
             onCategoryToggle={handleCategoryToggle}
+            onCategoryAdd={(category) => {
+              const newCategory = { ...category, id: `cat-${Date.now()}` };
+              const updatedCategories = [...categories, newCategory];
+              setCategories(updatedCategories);
+              saveCategories(updatedCategories);
+            }}
+            onCategoryDelete={(id) => {
+              const updatedCategories = categories.filter(c => c.id !== id);
+              setCategories(updatedCategories);
+              saveCategories(updatedCategories);
+            }}
+            onCategoryUpdate={(id, updates) => {
+              const updatedCategories = categories.map(c => 
+                c.id === id ? { ...c, ...updates } : c
+              );
+              setCategories(updatedCategories);
+              saveCategories(updatedCategories);
+            }}
             onAddEvent={() => {
               setIsNewEvent(true);
               setSelectedEvent(null);
@@ -268,6 +286,7 @@ export default function CalendarApp() {
       <AIAssistant
         isOpen={isAIAssistantOpen}
         onClose={() => setIsAIAssistantOpen(false)}
+        events={events}
       />
 
       <RecycleBin

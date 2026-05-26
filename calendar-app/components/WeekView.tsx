@@ -175,26 +175,31 @@ export default function WeekView({ events, currentDate, onDateChange, onEventCli
                         onMouseEnter={() => setHoveredEvent(event.id)}
                         onMouseLeave={() => setHoveredEvent(null)}
                       >
-                        <div className={`p-2 h-full flex flex-col justify-between overflow-hidden ${
+                        <div className={`p-2 h-full flex flex-col justify-between ${
                           isCompleted ? 'opacity-70' : ''
                         }`}>
-                          <div>
-                            <div className={`text-sm font-medium truncate ${
+                          <div className="flex-1 overflow-hidden">
+                            <div className={`text-sm font-medium leading-tight ${
                               isCompleted ? 'text-white/60 line-through' : 'text-white'
                             }`}>
                               {event.title}
                             </div>
-                            <div className="text-xs text-white/60 truncate">
+                            <div className="text-xs text-white/60 mt-1">
                               <Clock className="w-3 h-3 inline mr-1" />
                               {new Date(event.start).toLocaleTimeString('zh-CN', { 
                                 hour: '2-digit', 
                                 minute: '2-digit' 
                               })}
                             </div>
+                            {event.location && (
+                              <div className="text-xs text-white/50 mt-0.5 truncate">
+                                {event.location}
+                              </div>
+                            )}
                           </div>
                           
                           {!isCompleted && (
-                            <div className="text-xs text-white/70">
+                            <div className="text-xs text-white/70 mt-1">
                               {calculateTimeUntilEvent(event.start)}
                             </div>
                           )}
