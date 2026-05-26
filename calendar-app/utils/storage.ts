@@ -1,4 +1,4 @@
-import { CalendarEvent, DeletedEvent, CalendarCategory, UserSettings, NotificationItem, ReminderTime } from '../types';
+import { CalendarEvent, DeletedEvent, CalendarCategory, UserSettings, NotificationItem, ReminderTime, ThemeOption, BackgroundOption, MusicOption } from '../types';
 
 const EVENTS_KEY = 'calendar_events';
 const DELETED_EVENTS_KEY = 'calendar_deleted_events';
@@ -6,6 +6,8 @@ const CATEGORIES_KEY = 'calendar_categories';
 const SETTINGS_KEY = 'calendar_settings';
 const NOTIFICATIONS_KEY = 'calendar_notifications';
 const RECYCLE_BIN_DAYS = 30;
+
+const isBrowser = () => typeof window !== 'undefined';
 
 const defaultCategories: CalendarCategory[] = [
   { id: 'cat-1', name: '团队会议', color: '#3b82f6', enabled: true },
@@ -18,9 +20,45 @@ const defaultCategories: CalendarCategory[] = [
 
 const defaultSettings: UserSettings = {
   defaultReminderTime: 10,
+  defaultSnoozeTime: 10,
   autoPlayMusic: false,
-  theme: 'dark',
+  theme: 'blue',
+  backgroundId: 'bg-1',
+  musicId: 'music-1',
 };
+
+export const themeOptions: ThemeOption[] = [
+  { id: 'blue', name: '蓝色主题', primaryColor: '#3b82f6' },
+  { id: 'purple', name: '紫色主题', primaryColor: '#8b5cf6' },
+  { id: 'green', name: '绿色主题', primaryColor: '#10b981' },
+  { id: 'orange', name: '橙色主题', primaryColor: '#f59e0b' },
+  { id: 'pink', name: '粉色主题', primaryColor: '#ec4899' },
+];
+
+export const backgroundOptions: BackgroundOption[] = [
+  { id: 'bg-1', name: '山脉日落', url: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=1920&q=80' },
+  { id: 'bg-2', name: '阿尔卑斯山', url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&q=80' },
+  { id: 'bg-3', name: '迷雾森林', url: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=1920&q=80' },
+  { id: 'bg-4', name: '海滩黄昏', url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&q=80' },
+  { id: 'bg-5', name: '雪山全景', url: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1920&q=80' },
+  { id: 'bg-6', name: '城市夜景', url: 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=1920&q=80' },
+];
+
+export const musicOptions: MusicOption[] = [
+  { id: 'music-1', name: 'Time', artist: 'Hans Zimmer' },
+  { id: 'music-2', name: 'Interstellar Suite', artist: 'Hans Zimmer' },
+  { id: 'music-3', name: 'Cornfield Chase', artist: 'Hans Zimmer' },
+  { id: 'music-4', name: 'Inception Suite', artist: 'Hans Zimmer' },
+  { id: 'music-5', name: 'Dune Theme', artist: 'Hans Zimmer' },
+];
+
+export const snoozeOptions: { value: number; label: string }[] = [
+  { value: 5, label: '5分钟' },
+  { value: 10, label: '10分钟' },
+  { value: 15, label: '15分钟' },
+  { value: 30, label: '30分钟' },
+  { value: 60, label: '1小时' },
+];
 
 const generateId = (): string => {
   return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -28,6 +66,7 @@ const generateId = (): string => {
 
 export const getEvents = (): CalendarEvent[] => {
   try {
+    if (!isBrowser()) return getDefaultEvents();
     const data = localStorage.getItem(EVENTS_KEY);
     if (data) {
       const events = JSON.parse(data);
@@ -47,6 +86,7 @@ export const getEvents = (): CalendarEvent[] => {
 
 export const saveEvents = (events: CalendarEvent[]): void => {
   try {
+    if (!isBrowser()) return;
     localStorage.setItem(EVENTS_KEY, JSON.stringify(events));
   } catch (error) {
     console.error('Failed to save events:', error);
@@ -133,6 +173,7 @@ export const getDefaultEvents = (): CalendarEvent[] => {
 
 export const getCategories = (): CalendarCategory[] => {
   try {
+    if (!isBrowser()) return defaultCategories;
     const data = localStorage.getItem(CATEGORIES_KEY);
     if (data) {
       return JSON.parse(data);
@@ -145,6 +186,7 @@ export const getCategories = (): CalendarCategory[] => {
 
 export const saveCategories = (categories: CalendarCategory[]): void => {
   try {
+    if (!isBrowser()) return;
     localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
   } catch (error) {
     console.error('Failed to save categories:', error);
@@ -153,6 +195,7 @@ export const saveCategories = (categories: CalendarCategory[]): void => {
 
 export const getSettings = (): UserSettings => {
   try {
+    if (!isBrowser()) return defaultSettings;
     const data = localStorage.getItem(SETTINGS_KEY);
     if (data) {
       return { ...defaultSettings, ...JSON.parse(data) };
@@ -165,6 +208,7 @@ export const getSettings = (): UserSettings => {
 
 export const saveSettings = (settings: UserSettings): void => {
   try {
+    if (!isBrowser()) return;
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   } catch (error) {
     console.error('Failed to save settings:', error);
@@ -224,6 +268,7 @@ export const deleteEvent = (id: string): boolean => {
 
 export const getDeletedEvents = (): DeletedEvent[] => {
   try {
+    if (!isBrowser()) return [];
     const data = localStorage.getItem(DELETED_EVENTS_KEY);
     if (data) {
       const events = JSON.parse(data);
@@ -249,6 +294,7 @@ export const getDeletedEvents = (): DeletedEvent[] => {
 
 export const saveDeletedEvents = (events: DeletedEvent[]): void => {
   try {
+    if (!isBrowser()) return;
     localStorage.setItem(DELETED_EVENTS_KEY, JSON.stringify(events));
   } catch (error) {
     console.error('Failed to save deleted events:', error);
@@ -274,6 +320,7 @@ export const restoreEvent = (id: string): boolean => {
 
 export const getNotifications = (): NotificationItem[] => {
   try {
+    if (!isBrowser()) return [];
     const data = localStorage.getItem(NOTIFICATIONS_KEY);
     if (data) {
       const notifications = JSON.parse(data);
@@ -290,6 +337,7 @@ export const getNotifications = (): NotificationItem[] => {
 
 export const saveNotifications = (notifications: NotificationItem[]): void => {
   try {
+    if (!isBrowser()) return;
     localStorage.setItem(NOTIFICATIONS_KEY, JSON.stringify(notifications));
   } catch (error) {
     console.error('Failed to save notifications:', error);

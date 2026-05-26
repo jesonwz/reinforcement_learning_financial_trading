@@ -7,9 +7,10 @@ interface HeaderProps {
   onSearchChange: (query: string) => void;
   notificationCount: number;
   onNotificationsClick: () => void;
+  onSettingsClick: () => void;
 }
 
-export default function Header({ searchQuery, onSearchChange, notificationCount, onNotificationsClick }: HeaderProps) {
+export default function Header({ searchQuery, onSearchChange, notificationCount, onNotificationsClick, onSettingsClick }: HeaderProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
@@ -43,7 +44,10 @@ export default function Header({ searchQuery, onSearchChange, notificationCount,
 
         <div className="flex items-center gap-2">
           <Tooltip content="设置">
-            <button className="p-2.5 rounded-xl glass-effect hover:bg-white/20 transition-all duration-200">
+            <button 
+              onClick={onSettingsClick}
+              className="p-2.5 rounded-xl glass-effect hover:bg-white/20 transition-all duration-200"
+            >
               <Settings className="w-5 h-5 text-white/70 hover:text-white transition-colors" />
             </button>
           </Tooltip>

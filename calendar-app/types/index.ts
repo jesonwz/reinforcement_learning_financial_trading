@@ -1,12 +1,31 @@
 export type EventStatus = 'pending' | 'reminded' | 'completed';
 
 export type ReminderTime = 5 | 10 | 20 | 30 | 60 | 120;
+export type SnoozeTime = 5 | 10 | 15 | 30 | 60;
 
 export type CalendarCategory = {
   id: string;
   name: string;
   color: string;
   enabled: boolean;
+};
+
+export type ThemeOption = {
+  id: string;
+  name: string;
+  primaryColor: string;
+};
+
+export type BackgroundOption = {
+  id: string;
+  name: string;
+  url: string;
+};
+
+export type MusicOption = {
+  id: string;
+  name: string;
+  artist: string;
 };
 
 export interface CalendarEvent {
@@ -30,8 +49,11 @@ export interface DeletedEvent extends CalendarEvent {
 
 export interface UserSettings {
   defaultReminderTime: ReminderTime;
+  defaultSnoozeTime: SnoozeTime;
   autoPlayMusic: boolean;
-  theme: 'light' | 'dark';
+  theme: string;
+  backgroundId: string;
+  musicId: string;
 }
 
 export interface NotificationItem {

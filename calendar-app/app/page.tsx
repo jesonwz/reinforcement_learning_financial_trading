@@ -12,14 +12,23 @@ import AIAssistant from '../components/AIAssistant';
 import RecycleBin from '../components/RecycleBin';
 import ViewSwitcher, { ViewType } from '../components/ViewSwitcher';
 import MusicPlayer from '../components/MusicPlayer';
-import type { CalendarEvent, CalendarCategory, EventStatus, DeletedEvent, NotificationItem } from '../types';
-import { getEvents, saveEvents, createEvent, updateEvent, deleteEvent, getCategories, saveCategories, getDeletedEvents, restoreEvent, getNotifications, saveNotifications, addNotification, markNotificationAsRead, getUnreadNotificationCount, clearExpiredNotifications } from '../utils/storage';
+import SettingsModal from '../components/SettingsModal';
+import type { CalendarEvent, CalendarCategory, EventStatus, DeletedEvent, NotificationItem, UserSettings } from '../types';
+import { getEvents, saveEvents, createEvent, updateEvent, deleteEvent, getCategories, saveCategories, getDeletedEvents, restoreEvent, getNotifications, saveNotifications, addNotification, markNotificationAsRead, getUnreadNotificationCount, clearExpiredNotifications, getSettings, saveSettings } from '../utils/storage';
 
 export default function CalendarApp() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [categories, setCategories] = useState<CalendarCategory[]>([]);
   const [deletedEvents, setDeletedEvents] = useState<DeletedEvent[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [settings, setSettings] = useState<UserSettings>({
+    defaultReminderTime: 10,
+    defaultSnoozeTime: 10,
+    autoPlayMusic: false,
+    theme: 'blue',
+    backgroundId: 'bg-1',
+    musicId: 'music-1',
+  });
   const [currentDate, setCurrentDate] = useState(new Date());
   const [currentView, setCurrentView] = useState<ViewType>('week');
   const [searchQuery, setSearchQuery] = useState('');
@@ -29,6 +38,7 @@ export default function CalendarApp() {
   const [isNotificationCenterOpen, setIsNotificationCenterOpen] = useState(false);
   const [isAIAssistantOpen, setIsAIAssistantOpen] = useState(false);
   const [isRecycleBinOpen, setIsRecycleBinOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
 
   useEffect(() => {
@@ -36,6 +46,7 @@ export default function CalendarApp() {
     setCategories(getCategories());
     setDeletedEvents(getDeletedEvents());
     setNotifications(getNotifications());
+    setSettings(getSettings());
     clearExpiredNotifications();
   }, []);
 
@@ -140,11 +151,19 @@ export default function CalendarApp() {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
   }, []);
 
+  const handleSaveSettings = useCallback((newSettings: UserSettings) => {
+    setSettings(newSettings);
+    saveSettings(newSettings);
+  }, []);
+
   const notificationCount = getUnreadNotificationCount();
 
   return (
     <div className="min-h-screen w-full relative">
-      <NaturalBackground />
+      <NaturalBackground 
+        backgroundId={settings.backgroundId}
+        autoRotate={false}
+      />
       
       <div className="relative z-10 h-screen flex flex-col">
         <Header
@@ -152,6 +171,7 @@ export default function CalendarApp() {
           onSearchChange={setSearchQuery}
           notificationCount={notificationCount}
           onNotificationsClick={() => setIsNotificationCenterOpen(true)}
+          onSettingsClick={() => setIsSettingsOpen(true)}
         />
         
         <div className="flex-1 flex overflow-hidden pt-20">
@@ -256,6 +276,13 @@ export default function CalendarApp() {
         deletedEvents={deletedEvents}
         onRestore={handleRestoreEvent}
         categories={categories}
+      />
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        settings={settings}
+        onSaveSettings={handleSaveSettings}
       />
     </div>
   );
